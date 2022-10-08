@@ -2,6 +2,7 @@ package main
 
 import (
 	"ecommerce-golang/controllers"
+	"ecommerce-golang/database"
 	"ecommerce-golang/middleware"
 	"ecommerce-golang/routes"
 	"log"
