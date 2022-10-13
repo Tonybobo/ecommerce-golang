@@ -28,7 +28,7 @@ func AddAddress() gin.HandlerFunc {
 		address, err := primitive.ObjectIDFromHex(user_id)
 
 		if err != nil {
-			c.IndentedJSON(500, "Internal Server Error")
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		}
 
 		var addresses models.Address
@@ -36,7 +36,7 @@ func AddAddress() gin.HandlerFunc {
 		addresses.Address_id = primitive.NewObjectID()
 
 		if err = c.BindJSON(&addresses); err != nil {
-			c.IndentedJSON(http.StatusNotAcceptable, err.Error())
+			c.JSON(http.StatusNotAcceptable, gin.H{"error": err.Error()})
 		}
 
 		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
@@ -49,12 +49,12 @@ func AddAddress() gin.HandlerFunc {
 		cursor, err := UserCollection.Aggregate(ctx, mongo.Pipeline{match_filter, unwind, group})
 
 		if err != nil {
-			c.IndentedJSON(500, "Internal Server Error")
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		}
 
 		var addressinfo []bson.M
 		if err = cursor.All(ctx, &addressinfo); err != nil {
-			panic(err)
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		}
 
 		var size int32
@@ -68,10 +68,10 @@ func AddAddress() gin.HandlerFunc {
 			update := bson.D{{Key: "$push", Value: bson.D{primitive.E{Key: "address", Value: addresses}}}}
 			_, err := UserCollection.UpdateOne(ctx, filter, update)
 			if err != nil {
-				c.IndentedJSON(http.StatusInternalServerError, "Internal Server Error")
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			}
 		} else {
-			c.IndentedJSON(400, "Not Allowed")
+			c.JSON(400, "Not Allowed")
 		}
 
 		defer cancel()
@@ -93,11 +93,14 @@ func EditHomeAddress() gin.HandlerFunc {
 		}
 
 		userId, err := primitive.ObjectIDFromHex(user_id)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid User ID"})
+		}
 
 		var editAddress models.Address
 
 		if err = c.BindJSON(&editAddress); err != nil {
-			c.IndentedJSON(http.StatusNotAcceptable, err.Error())
+			c.JSON(http.StatusNotAcceptable, gin.H{"error": err.Error()})
 		}
 
 		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
@@ -111,10 +114,10 @@ func EditHomeAddress() gin.HandlerFunc {
 
 		if err != nil {
 			log.Println(err.Error())
-			c.IndentedJSON(http.StatusInternalServerError, "Internal Server Error")
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		}
 		ctx.Done()
-		c.IndentedJSON(200, "Successfully update Home Address")
+		c.JSON(200, "Successfully update Home Address")
 
 	}
 
@@ -135,14 +138,14 @@ func EditWorkAddress() gin.HandlerFunc {
 		userId, err := primitive.ObjectIDFromHex(user_id)
 
 		if err != nil {
-			c.IndentedJSON(500, "Internal Server Error")
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 
 		var editAddress models.Address
 
 		if err = c.BindJSON(&editAddress); err != nil {
-			c.IndentedJSON(http.StatusNotAcceptable, err.Error())
+			c.JSON(http.StatusNotAcceptable, gin.H{"error": err.Error()})
 		}
 
 		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
@@ -156,10 +159,10 @@ func EditWorkAddress() gin.HandlerFunc {
 
 		if err != nil {
 			log.Println(err.Error())
-			c.IndentedJSON(http.StatusInternalServerError, "Internal Server Error")
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		}
 		ctx.Done()
-		c.IndentedJSON(200, "Successfully update Home Address")
+		c.JSON(200, "Successfully update Home Address")
 
 	}
 }
@@ -180,7 +183,7 @@ func DeleteAddress() gin.HandlerFunc {
 		userId, err := primitive.ObjectIDFromHex(user_id)
 
 		if err != nil {
-			c.IndentedJSON(500, "Internal Server Error")
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 
@@ -195,14 +198,14 @@ func DeleteAddress() gin.HandlerFunc {
 		_, err = UserCollection.UpdateOne(ctx, filter, update)
 
 		if err != nil {
-			c.IndentedJSON(404, "Something Went Wrong While updating address")
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			return
 		}
 
 		defer cancel()
 
 		ctx.Done()
-		c.IndentedJSON(200, "Successfully Updated ")
+		c.JSON(200, "Successfully Updated ")
 	}
 
 }

@@ -173,7 +173,7 @@ func SearchProduct() gin.HandlerFunc {
 		cursor, err := ProductCollection.Find(ctx, bson.D{{}})
 
 		if err != nil {
-			c.IndentedJSON(http.StatusInternalServerError, "Something Went Wrong")
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 
@@ -189,13 +189,13 @@ func SearchProduct() gin.HandlerFunc {
 
 		if err := cursor.Err(); err != nil {
 			log.Println(err)
-			c.IndentedJSON(400, "Invalid")
+			c.JSON(http.StatusNotFound, gin.H{"error": "No Product Found"})
 			return
 		}
 
 		defer cancel()
 
-		c.IndentedJSON(200, productlist)
+		c.JSON(200, productlist)
 	}
 }
 
@@ -227,7 +227,7 @@ func SearchProductByQuery() gin.HandlerFunc {
 		err = cursor.All(ctx, &searchProducts)
 		if err != nil {
 			log.Println(err)
-			c.IndentedJSON(400, "invalid")
+			c.JSON(400, "No Product Matched")
 			return
 		}
 
@@ -235,7 +235,7 @@ func SearchProductByQuery() gin.HandlerFunc {
 
 		if err := cursor.Err(); err != nil {
 			log.Println(err)
-			c.IndentedJSON(40, "invalid request")
+			c.JSON(http.StatusNotFound, "No Product Matched")
 			return
 		}
 

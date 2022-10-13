@@ -138,13 +138,13 @@ func GetItemFromCart() gin.HandlerFunc {
 
 		if err := cursor.All(ctx, &listing); err != nil {
 			log.Println(err)
-			c.IndentedJSON(500, "Internal Server Error")
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 
 		for _, json := range listing {
-			c.IndentedJSON(200, json["total"])
-			c.IndentedJSON(200, cart.UserCart)
+			c.JSON(http.StatusOK, json["total"])
+			c.JSON(http.StatusOK, cart.UserCart)
 		}
 
 		ctx.Done()
@@ -170,7 +170,7 @@ func (app *Application) BuyFromCart() gin.HandlerFunc {
 			return
 		}
 
-		c.IndentedJSON(200, "Successfully buy from cart")
+		c.JSON(200, "Successfully buy from cart")
 	}
 }
 
@@ -201,10 +201,10 @@ func (app *Application) InstantBuy() gin.HandlerFunc {
 
 		err = database.InstantBuyer(ctx, app.prodCollection, app.userCollection, productID, userQueryId)
 		if err != nil {
-			c.IndentedJSON(http.StatusInternalServerError, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 
-		c.IndentedJSON(200, "Successfully placed the order")
+		c.JSON(200, "Successfully placed the order")
 	}
 }
