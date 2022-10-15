@@ -4,7 +4,6 @@ import (
 	"context"
 	"ecommerce-golang/database"
 	"log"
-	"os"
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
@@ -22,9 +21,7 @@ type SignDetailed struct {
 	jwt.StandardClaims
 }
 
-var UserData *mongo.Collection = database.UserData(database.Client, "users")
-
-var SECRET_KEY = os.Getenv("SECRET_KEY")
+var UserData *mongo.Collection = database.UserData(database.Client, "Users")
 
 func TokenGenerator(email string, firstName string, lastName string, userId string) (signedToken string, signedRefreshToken string, err error) {
 	claims := &SignDetailed{
@@ -43,11 +40,11 @@ func TokenGenerator(email string, firstName string, lastName string, userId stri
 		},
 	}
 
-	token, err := jwt.NewWithClaims(jwt.SigningMethodES256, claims).SignedString([]byte(SECRET_KEY))
+	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte("SECRET_KEY"))
 	if err != nil {
 		return "", "", err
 	}
-	refreshToken, err := jwt.NewWithClaims(jwt.SigningMethodES256, refreshClaims).SignedString([]byte(SECRET_KEY))
+	refreshToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims).SignedString([]byte("SECRET_KEY"))
 
 	if err != nil {
 		return "", "", err
@@ -58,7 +55,7 @@ func TokenGenerator(email string, firstName string, lastName string, userId stri
 
 func ValidateToken(signedToken string) (claims *SignDetailed, msg string) {
 	token, err := jwt.ParseWithClaims(signedToken, &SignDetailed{}, func(token *jwt.Token) (interface{}, error) {
-		return []byte(SECRET_KEY), nil
+		return []byte("SECRET_KEY"), nil
 	})
 
 	if err != nil {
@@ -91,9 +88,9 @@ func UpdateAllTokens(signedToken string, refreshToken string, userId string) {
 	updateObj = append(updateObj, bson.E{Key: "refresh_token", Value: refreshToken})
 	updated_at, _ := time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 
-	updateObj = append(updateObj, bson.E{Key: "updatedat", Value: updated_at})
+	updateObj = append(updateObj, bson.E{Key: "updated_at", Value: updated_at})
 
-	upsert := true
+	upsert := false
 
 	filter := bson.M{"user_id": userId}
 
