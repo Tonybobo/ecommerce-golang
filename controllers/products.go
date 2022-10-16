@@ -3,6 +3,8 @@ package controllers
 import (
 	"context"
 	"ecommerce-golang/models"
+	"ecommerce-golang/tokens"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -10,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func AddProduct() gin.HandlerFunc {
@@ -46,6 +49,44 @@ func AddProduct() gin.HandlerFunc {
 
 func EditProduct() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		//extract token to get user id
+		token := c.Request.Header.Get("token")
+		claim, msg := tokens.ValidateToken(token)
+
+		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+		defer cancel()
+		if msg != "" {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Expired Token /Invalid Token"})
+		}
+
+		var product models.Product
+
+		if err := c.BindJSON(&product); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"errors": err.Error()})
+		}
+
+		query := bson.D{{Key: "_id", Value: product.Product_ID}, {Key: "user_id", Value: claim.Uid}}
+		fmt.Println(query)
+		update := bson.D{{Key: "$set", Value: product}}
+
+		res := ProductCollection.FindOneAndUpdate(
+			ctx,
+			query,
+			update,
+			options.FindOneAndUpdate().SetReturnDocument(1))
+
+		var updatedProdcut models.Product
+		if err := res.Decode(&updatedProdcut); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
+
+		defer cancel()
+		c.JSON(http.StatusOK, updatedProdcut)
+	}
+}
+
+func RemoveProduct() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
 
 	}
 }

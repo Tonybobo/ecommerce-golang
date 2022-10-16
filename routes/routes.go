@@ -18,6 +18,7 @@ func ProductRoutes(incomingRoutes *gin.Engine) {
 	//add product with user id
 	incomingRoutes.POST("/product/addproduct", controllers.AddProduct())
 	//edit product with user id
+	incomingRoutes.PUT("/product/editProduct", controllers.EditProduct())
 	//remove product with user id
 	incomingRoutes.GET("/product/productview", controllers.SearchProduct())
 	incomingRoutes.GET("/product/search", controllers.SearchProductByQuery())
