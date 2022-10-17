@@ -20,6 +20,7 @@ func ProductRoutes(incomingRoutes *gin.Engine) {
 	//edit product with user id
 	incomingRoutes.PUT("/product/editProduct", controllers.EditProduct())
 	//remove product with user id
-	incomingRoutes.GET("/product/productview", controllers.SearchProduct())
+	incomingRoutes.DELETE("/product/removeProduct", controllers.RemoveProduct())
+	incomingRoutes.GET("/product", controllers.AllProduct())
 	incomingRoutes.GET("/product/search", controllers.SearchProductByQuery())
 }
