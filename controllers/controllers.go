@@ -123,3 +123,10 @@ func Login() gin.HandlerFunc {
 		c.JSON(http.StatusOK, foundUser)
 	}
 }
+
+func Logout() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Header("token", "")
+		c.JSON(http.StatusOK, "Successfully logout")
+	}
+}
