@@ -10,8 +10,8 @@ func UserRoutes(incomingRoutes *gin.Engine) {
 	incomingRoutes.POST("/users/signup", controllers.SignUp())
 	incomingRoutes.POST("/users/login", controllers.Login())
 	incomingRoutes.POST("/users/logout", controllers.Logout())
-	//logout
-	//edit information
+	incomingRoutes.GET("/users/user", controllers.GetUser())
+	incomingRoutes.PUT("/users/edit", controllers.EditUser())
 	// Add function to reset password with email ?????
 }
 

@@ -16,6 +16,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 var (
@@ -128,5 +129,78 @@ func Logout() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Header("token", "")
 		c.JSON(http.StatusOK, "Successfully logout")
+	}
+}
+
+func GetUser() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		token := c.Request.Header.Get("token")
+		claim, msg := generate.ValidateToken(token)
+
+		if msg != "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid/Expired Token"})
+			return
+		}
+
+		var user models.User
+		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+
+		defer cancel()
+
+		userId, err := primitive.ObjectIDFromHex(claim.Uid)
+
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		result := UserCollection.FindOne(ctx, bson.M{"_id": userId}, options.FindOne())
+
+		if err := result.Decode(&user); err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		}
+
+		defer cancel()
+
+		c.JSON(http.StatusOK, user)
+
+	}
+}
+
+func EditUser() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+		defer cancel()
+
+		token := c.Request.Header.Get("token")
+		claim, msg := generate.ValidateToken(token)
+		if msg != "" {
+			c.JSON(http.StatusForbidden, gin.H{"errors": "Invalid/Expired Token"})
+			return
+		}
+
+		var user models.User
+		if err := c.BindJSON(&user); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"errors": err.Error()})
+			return
+		}
+
+		var updatedUser models.User
+		userId, _ := primitive.ObjectIDFromHex(claim.Uid)
+		user.Token = &token
+		user.Refresh_Token = &token
+		query := bson.D{{Key: "_id", Value: userId}}
+		update := bson.D{{Key: "$set", Value: user}}
+
+		result := UserCollection.FindOneAndUpdate(ctx, query, update, options.FindOneAndUpdate().SetReturnDocument(1))
+
+		defer cancel()
+		if err := result.Decode(&updatedUser); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"errors": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, updatedUser)
 	}
 }
