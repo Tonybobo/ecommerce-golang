@@ -6,6 +6,7 @@ import (
 	"ecommerce-golang/middleware"
 	"ecommerce-golang/models"
 	generate "ecommerce-golang/tokens"
+	"ecommerce-golang/utils"
 	"fmt"
 	"log"
 	"net/http"
@@ -202,5 +203,14 @@ func EditUser() gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusOK, updatedUser)
+	}
+}
+
+func ForgotPassword() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		err := utils.SendEmail()
+		if err != nil {
+			fmt.Println(err.Error())
+		}
 	}
 }

@@ -6,6 +6,15 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+type ForgotPasswordInput struct {
+	Email string `json:"email"  validate:"email,required"`
+}
+
+type ResetPasswordInput struct {
+	Password        string `json:"password" validate:"required"`
+	PasswordConfirm string `json:"passwordConfirm" validate:"required"`
+}
+
 type User struct {
 	ID              primitive.ObjectID `json:"_id" bson:"_id"`
 	First_Name      *string            `json:"first_name" validate:"required,min=2,max=30"`

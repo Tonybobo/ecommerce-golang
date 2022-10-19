@@ -12,6 +12,7 @@ func UserRoutes(incomingRoutes *gin.Engine) {
 	incomingRoutes.POST("/users/logout", controllers.Logout())
 	incomingRoutes.GET("/users/user", controllers.GetUser())
 	incomingRoutes.PUT("/users/edit", controllers.EditUser())
+	incomingRoutes.POST("/users/forgotpassword", controllers.ForgotPassword())
 	// Add function to reset password with email ?????
 }
 
