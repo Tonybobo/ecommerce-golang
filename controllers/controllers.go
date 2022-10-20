@@ -8,8 +8,10 @@ import (
 	generate "ecommerce-golang/tokens"
 	"ecommerce-golang/utils"
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -208,9 +210,39 @@ func EditUser() gin.HandlerFunc {
 
 func ForgotPassword() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		err := utils.SendEmail()
+		var input models.ForgotPasswordInput
+		var temp = template.Must(template.ParseGlob("templates/*.html"))
+		if err := c.BindJSON(&input); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		var user models.User
+		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+		defer cancel()
+
+		query := bson.M{"email": strings.ToLower(input.Email)}
+		err := UserCollection.FindOne(ctx, query).Decode(&user)
+		defer cancel()
+		if err != nil {
+			if err == mongo.ErrNoDocuments {
+				c.JSON(http.StatusOK, gin.H{"data": "Please Check your email"})
+				return
+			}
+			c.JSON(http.StatusBadGateway, gin.H{"errors": err.Error()})
+			return
+		}
+
+		emailData := utils.EmailData{
+			URL:       "http://localhost:3000/resetPassword/token=" + *user.Refresh_Token,
+			FirstName: *user.First_Name,
+			Subject:   "Reset Password",
+		}
+
+		err = utils.SendEmail(&user, &emailData, temp, "resetPassword.html")
 		if err != nil {
 			fmt.Println(err.Error())
 		}
+
+		c.JSON(http.StatusOK, gin.H{"data": "Please Check your email"})
 	}
 }

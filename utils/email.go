@@ -1,13 +1,17 @@
 package utils
 
 import (
+	"bytes"
 	"crypto/tls"
 	"ecommerce-golang/config"
+	"ecommerce-golang/models"
 	"fmt"
 	"html/template"
+	"log"
 	"os"
 	"path/filepath"
 
+	"github.com/k3a/html2text"
 	"gopkg.in/gomail.v2"
 )
 
@@ -37,22 +41,33 @@ func ParseTemplateDir(dir string) (*template.Template, error) {
 	return template.ParseFiles(paths...)
 }
 
-func SendEmail() error {
-	config, _ := config.LoadConfig(".")
+func SendEmail(user *models.User, data *EmailData, temp *template.Template, templateName string) error {
+	config, err := config.LoadConfig(".")
+
+	if err != nil {
+		fmt.Print(err.Error())
+	}
 
 	from := config.EmailFrom
 	smtpPass := config.SMTPPass
 	smtpUser := config.SMTPUser
-	to := "bochuangjie@gmail.com"
+	to := user.Email
 	smtpHost := config.SMTPHost
 	smtpPort := config.SMTPPort
 
+	var body bytes.Buffer
+
+	if err := temp.ExecuteTemplate(&body, templateName, &data); err != nil {
+		log.Fatal("Error at parsing template", err)
+	}
+
 	m := gomail.NewMessage()
-	message := []byte("This is a test")
 
 	m.SetHeader("From", from)
-	m.SetHeader("To", to)
-	m.SetBody("text/html", string(message))
+	m.SetHeader("To", *to)
+	m.SetHeader("Subject", data.Subject)
+	m.SetBody("text/html", body.String())
+	m.AddAlternative("text/plain", html2text.HTML2Text(body.String()))
 
 	d := gomail.NewDialer(smtpHost, smtpPort, smtpUser, smtpPass)
 	d.TLSConfig = &tls.Config{InsecureSkipVerify: true}
