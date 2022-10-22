@@ -13,15 +13,12 @@ func UserRoutes(incomingRoutes *gin.Engine) {
 	incomingRoutes.GET("/users/user", controllers.GetUser())
 	incomingRoutes.PUT("/users/edit", controllers.EditUser())
 	incomingRoutes.POST("/users/forgotpassword", controllers.ForgotPassword())
-	// Add function to reset password with email ?????
+	incomingRoutes.PATCH("/users/:resetToken", controllers.ResetPassword())
 }
 
 func ProductRoutes(incomingRoutes *gin.Engine) {
-	//add product with user id
 	incomingRoutes.POST("/product/addproduct", controllers.AddProduct())
-	//edit product with user id
 	incomingRoutes.PUT("/product/editProduct", controllers.EditProduct())
-	//remove product with user id
 	incomingRoutes.DELETE("/product/removeProduct", controllers.RemoveProduct())
 	incomingRoutes.GET("/product", controllers.AllProduct())
 	incomingRoutes.GET("/product/search", controllers.SearchProductByQuery())

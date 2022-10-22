@@ -233,7 +233,7 @@ func ForgotPassword() gin.HandlerFunc {
 		}
 
 		emailData := utils.EmailData{
-			URL:       "http://localhost:3000/resetPassword/token=" + *user.Refresh_Token,
+			URL:       "http://localhost:3000/resetPassword/" + *user.Refresh_Token,
 			FirstName: *user.First_Name,
 			Subject:   "Reset Password",
 		}
@@ -244,5 +244,47 @@ func ForgotPassword() gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusOK, gin.H{"data": "Please Check your email"})
+	}
+}
+
+func ResetPassword() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		token := c.Params.ByName("resetToken")
+
+		var input models.ResetPasswordInput
+
+		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+		defer cancel()
+
+		if err := c.BindJSON(&input); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		if input.Password != input.PasswordConfirm {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Password does not match with Confirm password"})
+			return
+		}
+
+		hashedPassword := middleware.HashPassword(input.Password)
+
+		query := bson.D{{Key: "token", Value: token}}
+		update := bson.D{{Key: "$set", Value: bson.D{{Key: "password", Value: hashedPassword}}}}
+
+		result, err := UserCollection.UpdateOne(ctx, query, update)
+		defer cancel()
+
+		if result.MatchedCount == 0 {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Invalid Token"})
+			return
+		}
+
+		if err != nil {
+			c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"message": "Please Login With New Password"})
+
 	}
 }
